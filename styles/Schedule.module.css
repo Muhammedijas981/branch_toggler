@@ -1,0 +1,62 @@
+/* ── Create form ─────────────────────────────── */
+.formCard { margin-bottom: 24px; }
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.formGroup { display: flex; flex-direction: column; gap: 6px; }
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.createBtn { margin-top: 20px; }
+
+/* ── Schedule list ────────────────────────────── */
+.scheduleList { display: flex; flex-direction: column; gap: 12px; }
+
+.scheduleItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  transition: border-color var(--transition);
+}
+.scheduleItem:hover { border-color: rgba(255,255,255,0.12); }
+
+.scheduleIcon { font-size: 22px; flex-shrink: 0; }
+
+.scheduleMeta { flex: 1; min-width: 0; }
+.scheduleProject { font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+.scheduleBranch { font-size: 13px; color: var(--text-secondary); }
+.branchTag { font-family: monospace; font-size: 12px; color: var(--accent-1); background: rgba(102,126,234,0.1); padding: 1px 6px; border-radius: 4px; }
+
+.scheduleTime { font-size: 12px; color: var(--text-muted); flex-shrink: 0; text-align: right; }
+.scheduleDate { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+
+.cancelBtn { padding: 6px 14px; font-size: 12px; }
+
+/* ── Tab filter ───────────────────────────────── */
+.tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+.tab {
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.tab:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+.tab.activeTab { background: rgba(102,126,234,0.15); border-color: rgba(102,126,234,0.3); color: var(--accent-1); }
+
+@media (max-width: 600px) { .formGrid { grid-template-columns: 1fr; } }
