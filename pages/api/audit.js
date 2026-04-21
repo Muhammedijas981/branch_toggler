@@ -21,23 +21,48 @@ export default async function handler(req, res) {
   const offset = (pageNum - 1) * limitNum;
 
   const supabase = getSupabase();
+  
+  // 1. Build the primary query for logs
   let query = supabase
     .from('audit_logs')
     .select('*', { count: 'exact' })
-    .eq('user_email', session.user.email)
     .order('created_at', { ascending: false })
     .range(offset, offset + limitNum - 1);
 
-  if (projectId) query = query.eq('project_id', projectId);
-  if (status) query = query.eq('status', status);
-  if (teamId) query = query.eq('team_id', teamId);
+  // 2. Build a summary query for stats (total success count)
+  let statsQuery = supabase
+    .from('audit_logs')
+    .select('status', { count: 'exact' })
+    .eq('status', 'success');
 
-  const { data, error, count } = await query;
+  // Optional: In the future, filter by session.user.email if private mode is enabled
+  // For now, we show team-wide activity for better collaboration
+  
+  if (projectId) {
+    query = query.eq('project_id', projectId);
+    statsQuery = statsQuery.eq('project_id', projectId);
+  }
+  if (status) query = query.eq('status', status);
+  if (teamId) {
+    query = query.eq('team_id', teamId);
+    statsQuery = statsQuery.eq('team_id', teamId);
+  }
+
+  const [{ data, error, count }, { count: totalSuccess }] = await Promise.all([
+    query,
+    statsQuery
+  ]);
 
   if (error) {
     console.error('[AUDIT GET ERROR]', error.message);
     return res.status(500).json({ error: 'Failed to fetch audit logs.' });
   }
 
-  return res.status(200).json({ logs: data, total: count, page: pageNum, limit: limitNum });
+  return res.status(200).json({ 
+    logs: data, 
+    total: count, 
+    totalSuccess: totalSuccess || 0,
+    page: pageNum, 
+    limit: limitNum 
+  });
 }

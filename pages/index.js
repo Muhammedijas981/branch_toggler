@@ -68,9 +68,10 @@ export default function Dashboard() {
       if (!res.ok) return;
       const data = await res.json();
       setRecentActivity(data.logs || []);
-      const total = data.total || 0;
-      const success = (data.logs || []).filter((l) => l.status === 'success').length;
-      setStats({ total, success });
+      setStats({ 
+        total: data.total || 0, 
+        success: data.totalSuccess || 0 
+      });
     })();
   }, [status, switching]);
 
@@ -237,7 +238,10 @@ export default function Dashboard() {
                 <div key={log.id} className={styles.activityItem}>
                   <span>{log.status === 'success' ? '✅' : '❌'}</span>
                   <div className={styles.activityMeta}>
-                    <div className={styles.activityProject}>{log.project_name}</div>
+                    <div className={styles.activityTitle}>
+                      <strong>{log.project_name}</strong>
+                      <span className={styles.activityUser}> by {log.user_name || 'Someone'}</span>
+                    </div>
                     <div className={styles.activityBranches}>
                       <span className={styles.branchTag}>{log.from_branch}</span>
                       →

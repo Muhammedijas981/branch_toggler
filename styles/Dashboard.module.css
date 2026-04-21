@@ -102,7 +102,9 @@
 }
 
 .activityMeta { flex: 1; min-width: 0; }
-.activityProject { font-weight: 600; color: var(--text-primary); margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.activityTitle { margin-bottom: 2px; display: flex; align-items: baseline; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.activityTitle strong { color: var(--text-primary); font-weight: 600; }
+.activityUser { font-size: 11px; color: var(--text-muted); }
 .activityBranches { color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
 .branchTag { font-family: monospace; font-size: 11px; background: rgba(255,255,255,0.05); padding: 1px 5px; border-radius: 4px; }
 .activityTime { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }

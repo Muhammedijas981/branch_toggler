@@ -32,7 +32,10 @@ export default async function handler(req, res) {
     if (status) query = query.eq('status', status);
 
     const { data, error } = await query;
-    if (error) return res.status(500).json({ error: 'Failed to fetch schedules.' });
+    if (error) {
+      console.error('[SCHEDULE GET ERROR]', error.message);
+      return res.status(500).json({ error: 'Failed to fetch schedules.' });
+    }
     return res.status(200).json({ schedules: data });
   }
 
@@ -40,10 +43,22 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { projectId, projectName, teamId, targetBranch, scheduledAt } = req.body;
 
-    if (!validateProjectId(projectId)) return res.status(400).json({ error: 'Invalid project ID.' });
-    if (!validateBranchName(targetBranch)) return res.status(400).json({ error: 'Invalid branch name.' });
-    if (!validateScheduledAt(scheduledAt)) return res.status(400).json({ error: 'Scheduled time must be in the future.' });
-    if (!projectName || typeof projectName !== 'string') return res.status(400).json({ error: 'Missing project name.' });
+    if (!validateProjectId(projectId)) {
+      console.warn('[SCHEDULE POST 400] Invalid project ID:', projectId);
+      return res.status(400).json({ error: 'Invalid project ID.' });
+    }
+    if (!validateBranchName(targetBranch)) {
+      console.warn('[SCHEDULE POST 400] Invalid branch name:', targetBranch);
+      return res.status(400).json({ error: 'Invalid branch name.' });
+    }
+    if (!validateScheduledAt(scheduledAt)) {
+      console.warn('[SCHEDULE POST 400] Invalid or past-due scheduled time:', scheduledAt);
+      return res.status(400).json({ error: 'Scheduled time must be in the future.' });
+    }
+    if (!projectName || typeof projectName !== 'string') {
+      console.warn('[SCHEDULE POST 400] Missing project name');
+      return res.status(400).json({ error: 'Missing project name.' });
+    }
 
     const { data, error } = await supabase
       .from('scheduled_switches')
@@ -59,7 +74,10 @@ export default async function handler(req, res) {
       .select('id, project_id, project_name, team_id, target_branch, scheduled_at, status, created_at')
       .single();
 
-    if (error) return res.status(500).json({ error: 'Failed to create schedule.' });
+    if (error) {
+      console.error('[SCHEDULE POST ERROR]', error.message);
+      return res.status(500).json({ error: 'Failed to create schedule.' });
+    }
 
     // Notify user
     const { data: settings } = await supabase
