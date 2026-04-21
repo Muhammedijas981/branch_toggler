@@ -1,99 +1,137 @@
-// pages/api/vercel.js
-
-async function handleVercelRequest(endpoint, token) {
-  const url = `https://api.vercel.com${endpoint}`;
-  const headers = {
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-    'User-Agent': 'Branch-Toggler-App', // Custom User-Agent to avoid Vercel's infinite loop protection
-  };
-  const res = await fetch(url, { headers });
-
-  if (!res.ok) {
-    const errorData = await res.json();
-    console.error(`Vercel API Error (${url}):`, errorData);
-    const error = new Error(errorData.error?.message || `Request failed with status ${res.status}`);
-    error.status = res.status;
-    throw error;
-  }
-  return res.json();
-}
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../lib/auth';
+import { getProjects, getBranches, switchProductionBranch } from '../../lib/vercel-api';
+import { validateProjectId, validateBranchName } from '../../lib/validators';
+import { rateLimit } from '../../lib/rate-limit';
+import { getSupabase } from '../../lib/supabase';
+import {
+  buildSwitchNotification,
+  sendSlackNotification,
+  sendDiscordNotification,
+} from '../../lib/notifications';
 
 export default async function handler(req, res) {
-  const { VERCEL_API_TOKEN } = process.env;
-
-  if (!VERCEL_API_TOKEN) {
-    return res.status(500).json({ error: 'Missing Vercel API token environment variable' });
+  // ── Rate limiting ──────────────────────────────────────────────────────────
+  const limit = rateLimit(req, { name: 'vercel', max: 30, windowMs: 60_000 });
+  if (!limit.success) {
+    return res.status(429).json({ error: 'Too many requests. Please slow down.' });
   }
 
+  // ── Authentication (Check identity, but use service token for API) ─────────
+  const session = await getServerSession(req, res, authOptions);
+  if (!session) {
+    return res.status(401).json({ error: 'Unauthorized. Please sign in.' });
+  }
+
+  const token = process.env.VERCEL_TOKEN; // Use service token
+  if (!token) {
+    return res.status(500).json({ error: 'Server configuration error: VERCEL_TOKEN is missing.' });
+  }
+
+  const userEmail = session.user.email;
+  const userName = session.user.name;
+
   try {
+    // ── GET: list projects or branches ───────────────────────────────────────
     if (req.method === 'GET') {
       const { action, projectId } = req.query;
 
       if (action === 'getProjects') {
-        const data = await handleVercelRequest('/v9/projects', VERCEL_API_TOKEN);
-        const projects = data.projects.map(p => ({ id: p.id, name: p.name }));
-        res.status(200).json({ projects });
-
-      } else if (action === 'getBranches' && projectId) {
-        const projectData = await handleVercelRequest(`/v9/projects/${projectId}`, VERCEL_API_TOKEN);
-        const deploymentsData = await handleVercelRequest(`/v6/deployments?projectId=${projectId}&limit=100`, VERCEL_API_TOKEN);
-        
-        const branches = [...new Set(deploymentsData.deployments
-          .map(d => d.meta?.githubCommitRef)
-          .filter(Boolean)
-        )];
-        
-        res.status(200).json({ currentProductionBranch: projectData.productionBranch, branches });
-
-      } else {
-        res.status(400).json({ error: 'Invalid action or missing projectId' });
+        const projects = await getProjects(token);
+        return res.status(200).json({ projects });
       }
 
-    } else if (req.method === 'POST') {
-      const { projectId, newBranch } = req.body;
-      const { PRODUCTION_DOMAIN } = process.env;
-
-      if (!projectId || !newBranch) {
-        return res.status(400).json({ error: 'Missing projectId or newBranch in request body' });
-      }
-      if (!PRODUCTION_DOMAIN) {
-        return res.status(500).json({ error: 'Missing PRODUCTION_DOMAIN environment variable.' });
+      if (action === 'getBranches') {
+        const { teamId } = req.query;
+        if (!validateProjectId(projectId)) {
+          return res.status(400).json({ error: 'Invalid project ID format.' });
+        }
+        const data = await getBranches(projectId, token, teamId);
+        return res.status(200).json(data);
       }
 
-      // 1. Fetch deployments
-      const deploymentsData = await handleVercelRequest(`/v6/deployments?projectId=${projectId}&limit=100`, VERCEL_API_TOKEN);
+      return res.status(400).json({ error: 'Invalid action or missing parameters.' });
+    }
 
-      // 2. Find the latest successful deployment for the target branch
-      const targetDeployment = deploymentsData.deployments
-        .find(d => d.meta?.githubCommitRef === newBranch && d.state === 'READY');
+    // ── POST: switch the production branch ───────────────────────────────────
+    if (req.method === 'POST') {
+      const { projectId, newBranch, projectName, teamId } = req.body;
 
-      if (!targetDeployment) {
-        return res.status(404).json({ error: `No READY deployment found for branch: ${newBranch}` });
+      if (!validateProjectId(projectId)) {
+        return res.status(400).json({ error: 'Invalid project ID format.' });
+      }
+      if (!validateBranchName(newBranch)) {
+        return res.status(400).json({ error: 'Invalid branch name format.' });
       }
 
-      // 3. Assign the production domain to this deployment
-      const aliasUrl = `https://api.vercel.com/v2/deployments/${targetDeployment.uid}/aliases`;
-      const response = await fetch(aliasUrl, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${VERCEL_API_TOKEN}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ alias: PRODUCTION_DOMAIN }),
+      const supabase = getSupabase();
+      let result;
+
+      try {
+        result = await switchProductionBranch(projectId, newBranch, token, teamId);
+      } catch (switchError) {
+        // Log the failed attempt
+        await supabase.from('audit_logs').insert({
+          user_email: userEmail,
+          user_name: userName,
+          project_id: projectId,
+          project_name: projectName || projectId,
+          team_id: teamId, // Store team context
+          from_branch: switchError.fromBranch || 'unknown',
+          to_branch: newBranch,
+          status: 'failed',
+          error_message: switchError.message,
+        });
+        throw switchError;
+      }
+
+      // Log the successful switch
+      await supabase.from('audit_logs').insert({
+        user_email: userEmail,
+        user_name: userName,
+        project_id: projectId,
+        project_name: projectName || projectId,
+        team_id: teamId, // Store team context
+        from_branch: result.fromBranch,
+        to_branch: newBranch,
+        status: 'success',
       });
 
-      const aliasData = await response.json();
+      // Fire notifications (non-blocking)
+      const { data: settings } = await supabase
+        .from('notification_settings')
+        .select('*')
+        .eq('user_email', userEmail)
+        .single();
 
-      if (!response.ok) {
-        throw new Error(aliasData.error?.message || 'Alias reassignment failed.');
+      if (settings?.notify_on_switch) {
+        const notif = buildSwitchNotification({
+          projectName: projectName || projectId,
+          fromBranch: result.fromBranch,
+          toBranch: newBranch,
+          userEmail,
+          status: 'success',
+        });
+        await Promise.all([
+          sendSlackNotification(settings.slack_webhook_url, notif.slack),
+          sendDiscordNotification(settings.discord_webhook_url, notif.discord),
+        ]);
       }
 
-      res.status(200).json({ success: true, message: `Successfully switched production to ${newBranch}` });
-
-    } else {
-      res.setHeader('Allow', ['GET', 'POST']);
-      res.status(405).end(`Method ${req.method} Not Allowed`);
+      return res.status(200).json({
+        success: true,
+        message: `Successfully switched production to branch: ${newBranch}`,
+        fromBranch: result.fromBranch,
+      });
     }
+
+    res.setHeader('Allow', ['GET', 'POST']);
+    res.status(405).end(`Method ${req.method} Not Allowed`);
   } catch (error) {
-    console.error('[VERCEL API HANDLER ERROR]', error);
-    res.status(error.status || 500).json({ error: error.message || 'Internal Server Error' });
+    console.error('[VERCEL API ERROR]', error.message);
+    const isClientError = error.status >= 400 && error.status < 500;
+    res.status(error.status || 500).json({
+      error: isClientError ? error.message : 'An internal error occurred. Please try again.',
+    });
   }
 }

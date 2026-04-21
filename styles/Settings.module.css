@@ -1,0 +1,46 @@
+.section { margin-bottom: 28px; }
+.sectionTitle {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.fieldGroup { margin-bottom: 18px; }
+.label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.hint { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+
+/* ── Toggle rows ──────────────────────── */
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.toggleRow:last-child { border-bottom: none; }
+.toggleInfo strong { display: block; font-size: 14px; color: var(--text-primary); margin-bottom: 2px; }
+.toggleInfo span { font-size: 12.5px; color: var(--text-muted); }
+
+/* ── Action row ──────────────────────── */
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+/* ── Alert ──────────────────────────── */
+.alert {
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 16px;
+}
+.alertSuccess { background: var(--success-bg); color: var(--success); border: 1px solid rgba(16,185,129,0.2); }
+.alertError   { background: var(--error-bg);   color: var(--error);   border: 1px solid rgba(239,68,68,0.2);  }

@@ -1,0 +1,146 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-base);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ambient background orbs */
+.page::before, .page::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.12;
+  pointer-events: none;
+}
+.page::before {
+  width: 500px; height: 500px;
+  background: #667eea;
+  top: -100px; left: -100px;
+}
+.page::after {
+  width: 400px; height: 400px;
+  background: #764ba2;
+  bottom: -80px; right: -80px;
+}
+
+.card {
+  background: rgba(16,16,30,0.9);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 24px;
+  padding: 48px 44px;
+  width: 100%;
+  max-width: 420px;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.7);
+  position: relative;
+  z-index: 1;
+  animation: fadeUp 0.5s ease;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.logo {
+  font-size: 3rem;
+  margin-bottom: 4px;
+  display: block;
+  text-align: center;
+}
+
+.title {
+  text-align: center;
+  font-size: 26px;
+  font-weight: 700;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 40px;
+  line-height: 1.5;
+}
+
+.signInBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  border: none;
+  background: #fff;
+  color: #000;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+.signInBtn:hover { background: #f0f0f0; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(0,0,0,0.5); }
+.signInBtn:active { transform: translateY(0); }
+.signInBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.vercelLogo {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -1px;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 28px 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.featureIcon { font-size: 16px; flex-shrink: 0; }
+
+.error {
+  margin-top: 16px;
+  padding: 10px 14px;
+  background: var(--error-bg);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: var(--radius-md);
+  color: var(--error);
+  font-size: 13px;
+  text-align: center;
+}

@@ -1,0 +1,85 @@
+.tableWrap {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+
+.historyTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.historyTable thead th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.historyTable tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+}
+
+.historyTable tbody tr:last-child { border-bottom: none; }
+.historyTable tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+.historyTable td { padding: 13px 16px; color: var(--text-secondary); vertical-align: middle; }
+.historyTable td:first-child { color: var(--text-primary); font-weight: 500; }
+
+.branchCell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+}
+
+.branchTag {
+  font-family: monospace;
+  font-size: 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-radius: 5px;
+  color: var(--text-primary);
+}
+
+.time { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+
+/* ── Filters bar ────────────────────────── */
+.filtersBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filterSelect {
+  padding: 8px 12px;
+  font-size: 13px;
+  min-width: 160px;
+}
+
+/* ── Pagination ────────────────────────── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.pageBtn {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: var(--radius-md);
+}
+.pageInfo { font-size: 13px; color: var(--text-secondary); }
