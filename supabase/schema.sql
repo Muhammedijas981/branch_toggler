@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   user_name      TEXT,
   project_id     TEXT        NOT NULL,
   project_name   TEXT        NOT NULL,
+  team_id        TEXT,       -- Added for team context
   from_branch    TEXT        NOT NULL,
   to_branch      TEXT        NOT NULL,
   status         TEXT        NOT NULL DEFAULT 'success', -- 'success' | 'failed'
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS scheduled_switches (
   user_email       TEXT        NOT NULL,
   project_id       TEXT        NOT NULL,
   project_name     TEXT        NOT NULL,
+  team_id          TEXT,       -- Added for team context
   target_branch    TEXT        NOT NULL,
   scheduled_at     TIMESTAMPTZ NOT NULL,
   status           TEXT        NOT NULL DEFAULT 'pending', -- 'pending' | 'executed' | 'failed' | 'cancelled'

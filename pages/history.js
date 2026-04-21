@@ -82,7 +82,7 @@ export default function History() {
       ) : (
         <>
           <div className={styles.tableWrap}>
-            <table>
+            <table className={styles.historyTable}>
               <thead>
                 <tr>
                   <th>Project</th>

@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   if (!limit.success) return res.status(429).json({ error: 'Too many requests.' });
 
   const session = await getServerSession(req, res, authOptions);
-  if (!session?.accessToken) return res.status(401).json({ error: 'Unauthorized. Please sign in.' });
+  if (!session) return res.status(401).json({ error: 'Unauthorized. Please sign in.' });
 
   const supabase = getSupabase();
   const userEmail = session.user.email;
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     const { status } = req.query;
     let query = supabase
       .from('scheduled_switches')
-      .select('id, project_id, project_name, target_branch, scheduled_at, status, executed_at, error_message, created_at')
+      .select('id, project_id, project_name, team_id, target_branch, scheduled_at, status, executed_at, error_message, created_at')
       .eq('user_email', userEmail)
       .order('scheduled_at', { ascending: true });
 
@@ -38,15 +38,12 @@ export default async function handler(req, res) {
 
   // ── POST: create a new scheduled switch ───────────────────────────────────
   if (req.method === 'POST') {
-    const { projectId, projectName, targetBranch, scheduledAt } = req.body;
+    const { projectId, projectName, teamId, targetBranch, scheduledAt } = req.body;
 
     if (!validateProjectId(projectId)) return res.status(400).json({ error: 'Invalid project ID.' });
     if (!validateBranchName(targetBranch)) return res.status(400).json({ error: 'Invalid branch name.' });
     if (!validateScheduledAt(scheduledAt)) return res.status(400).json({ error: 'Scheduled time must be in the future.' });
     if (!projectName || typeof projectName !== 'string') return res.status(400).json({ error: 'Missing project name.' });
-
-    // Encrypt the user's current OAuth token so the cron job can act on their behalf
-    const encryptedToken = encrypt(session.accessToken);
 
     const { data, error } = await supabase
       .from('scheduled_switches')
@@ -54,12 +51,12 @@ export default async function handler(req, res) {
         user_email: userEmail,
         project_id: projectId,
         project_name: projectName,
+        team_id: teamId,
         target_branch: targetBranch,
         scheduled_at: scheduledAt,
         status: 'pending',
-        encrypted_token: encryptedToken,
       })
-      .select('id, project_id, project_name, target_branch, scheduled_at, status, created_at')
+      .select('id, project_id, project_name, team_id, target_branch, scheduled_at, status, created_at')
       .single();
 
     if (error) return res.status(500).json({ error: 'Failed to create schedule.' });

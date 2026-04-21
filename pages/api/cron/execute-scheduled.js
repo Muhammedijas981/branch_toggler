@@ -52,11 +52,16 @@ export default async function handler(req, res) {
     let errorMsg = null;
 
     try {
-      // Decrypt the stored OAuth token for this user
-      const accessToken = decrypt(schedule.encrypted_token);
+      // Use the global VERCEL_TOKEN (previously used decrypted OAuth tokens)
+      const accessToken = process.env.VERCEL_TOKEN;
 
       // Execute the branch switch
-      await switchProductionBranch(schedule.project_id, schedule.target_branch, accessToken);
+      await switchProductionBranch(
+        schedule.project_id,
+        schedule.target_branch,
+        accessToken,
+        schedule.team_id
+      );
 
       // Log to audit_logs
       await supabase.from('audit_logs').insert({

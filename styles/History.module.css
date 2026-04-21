@@ -4,13 +4,13 @@
   border: 1px solid var(--border);
 }
 
-table {
+.historyTable {
   width: 100%;
   border-collapse: collapse;
   font-size: 13.5px;
 }
 
-thead th {
+.historyTable thead th {
   padding: 12px 16px;
   text-align: left;
   font-size: 11px;
@@ -23,15 +23,16 @@ thead th {
   white-space: nowrap;
 }
 
-tbody tr {
+.historyTable tbody tr {
   border-bottom: 1px solid var(--border);
   transition: background var(--transition);
 }
-tbody tr:last-child { border-bottom: none; }
-tbody tr:hover { background: rgba(255,255,255,0.02); }
 
-td { padding: 13px 16px; color: var(--text-secondary); vertical-align: middle; }
-td:first-child { color: var(--text-primary); font-weight: 500; }
+.historyTable tbody tr:last-child { border-bottom: none; }
+.historyTable tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+.historyTable td { padding: 13px 16px; color: var(--text-secondary); vertical-align: middle; }
+.historyTable td:first-child { color: var(--text-primary); font-weight: 500; }
 
 .branchCell {
   display: flex;

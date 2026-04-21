@@ -80,7 +80,9 @@ export default function Dashboard() {
     setLoadingBranches(true);
     setMessage({ type: '', text: '' });
     try {
-      const res = await fetch(`/api/vercel?action=getBranches&projectId=${projectId}`);
+      const project = projects.find((p) => p.id === projectId);
+      const teamQuery = project?.teamId ? `&teamId=${project.teamId}` : '';
+      const res = await fetch(`/api/vercel?action=getBranches&projectId=${projectId}${teamQuery}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setBranchData(data);
@@ -90,7 +92,7 @@ export default function Dashboard() {
     } finally {
       setLoadingBranches(false);
     }
-  }, []);
+  }, [projects]);
 
   useEffect(() => { fetchBranches(selectedProject); }, [selectedProject, fetchBranches]);
 
@@ -106,6 +108,7 @@ export default function Dashboard() {
           projectId: selectedProject,
           newBranch: selectedBranch,
           projectName: project?.name,
+          teamId: project?.teamId,
         }),
       });
       const result = await res.json();

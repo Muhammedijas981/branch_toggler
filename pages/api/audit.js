@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     return res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 
-  const { page = '1', limit: pageLimit = '20', projectId, status } = req.query;
+  const { page = '1', limit: pageLimit = '20', projectId, status, teamId } = req.query;
   const pageNum = Math.max(1, parseInt(page, 10));
   const limitNum = Math.min(50, Math.max(1, parseInt(pageLimit, 10)));
   const offset = (pageNum - 1) * limitNum;
@@ -30,6 +30,7 @@ export default async function handler(req, res) {
 
   if (projectId) query = query.eq('project_id', projectId);
   if (status) query = query.eq('status', status);
+  if (teamId) query = query.eq('team_id', teamId);
 
   const { data, error, count } = await query;
 

@@ -17,13 +17,17 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: 'Too many requests. Please slow down.' });
   }
 
-  // ── Authentication (OAuth token lives in the session) ─────────────────────
+  // ── Authentication (Check identity, but use service token for API) ─────────
   const session = await getServerSession(req, res, authOptions);
-  if (!session?.accessToken) {
+  if (!session) {
     return res.status(401).json({ error: 'Unauthorized. Please sign in.' });
   }
 
-  const token = session.accessToken;
+  const token = process.env.VERCEL_TOKEN; // Use service token
+  if (!token) {
+    return res.status(500).json({ error: 'Server configuration error: VERCEL_TOKEN is missing.' });
+  }
+
   const userEmail = session.user.email;
   const userName = session.user.name;
 
@@ -38,10 +42,11 @@ export default async function handler(req, res) {
       }
 
       if (action === 'getBranches') {
+        const { teamId } = req.query;
         if (!validateProjectId(projectId)) {
           return res.status(400).json({ error: 'Invalid project ID format.' });
         }
-        const data = await getBranches(projectId, token);
+        const data = await getBranches(projectId, token, teamId);
         return res.status(200).json(data);
       }
 
@@ -50,7 +55,7 @@ export default async function handler(req, res) {
 
     // ── POST: switch the production branch ───────────────────────────────────
     if (req.method === 'POST') {
-      const { projectId, newBranch, projectName } = req.body;
+      const { projectId, newBranch, projectName, teamId } = req.body;
 
       if (!validateProjectId(projectId)) {
         return res.status(400).json({ error: 'Invalid project ID format.' });
@@ -63,7 +68,7 @@ export default async function handler(req, res) {
       let result;
 
       try {
-        result = await switchProductionBranch(projectId, newBranch, token);
+        result = await switchProductionBranch(projectId, newBranch, token, teamId);
       } catch (switchError) {
         // Log the failed attempt
         await supabase.from('audit_logs').insert({
@@ -71,6 +76,7 @@ export default async function handler(req, res) {
           user_name: userName,
           project_id: projectId,
           project_name: projectName || projectId,
+          team_id: teamId, // Store team context
           from_branch: switchError.fromBranch || 'unknown',
           to_branch: newBranch,
           status: 'failed',
@@ -85,6 +91,7 @@ export default async function handler(req, res) {
         user_name: userName,
         project_id: projectId,
         project_name: projectName || projectId,
+        team_id: teamId, // Store team context
         from_branch: result.fromBranch,
         to_branch: newBranch,
         status: 'success',
